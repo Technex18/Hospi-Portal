@@ -114,16 +114,23 @@ def deskTeamEnquiry(request):
 	for deskteama in deskteam:
 		transactions  = Transaction.objects.filter(reciever = deskteama).order_by('timeStamp')
 		transactionArray = []
+		count = 0
 		for transaction in transactions:
 			transactionObject = {}
+			count += transaction.amount
 			transactionObject['amount'] = transaction.amount
 			transactionObject['facility'] = transaction.facility.name
 			transactionObject['facilityPrice'] = transaction.facility.maxPrice
 			transactionObject['creditor'] = transaction.creditor.email
 			transactionObject['timeStamp'] = transaction.timeStamp
 			transactionArray.append(transactionObject)
+		transactionObject['count'] = count
 		transactionObject['reciever'] = deskteama.user.username
 		transactionObject['data'] = transactionArray
 		transactionsData.append(transactionObject)
+	for transactionData in transactionsData:
+		for transactionB in transactionData['data']:
+			print transactionB['amount']
+			print transactionB['creditor']	
 	print transactionsData
 	return render(request,'deskEnquiry.html',{"transactionData":transactionsData})
