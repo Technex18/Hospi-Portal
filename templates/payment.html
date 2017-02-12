@@ -1,0 +1,22 @@
+<form method='post'>
+{% csrf_token %}
+<input type='text' name='identifier' placeholder="Email or Technex Id" /><br>
+<input type='number' name='amount' placeholder="Amount to be Paid" /><br>
+<select name='facilityName'>
+	{% for facility in facilities %}
+	<option value="{{facility.name}}">{{facility.name}} ({{facility.maxPrice}})</option>
+{% endfor %}
+</select>
+
+<input type='submit' value='Pay !!' />
+</form>
+{% if errors %}
+{{errors}}
+{% endif %}
+<br><br>
+{% if transaction %}
+{{transaction.creditor.email}}  {{transaction.creditor.user.first_name}}<br>
+Amount Paid: {{transaction.amount}} for {{transaction.facility.name}} out of {{transaction.facility.maxPrice}}
+<br><br>
+Recieved by {{transaction.reciever.user.username}}
+{% endif %}

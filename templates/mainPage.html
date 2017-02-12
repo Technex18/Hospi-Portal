@@ -1,0 +1,138 @@
+
+<html>
+<head>
+<link rel="stylesheet" href="/static/css/jquery-ui.css" type="text/css" media="all" />
+<script src="/static/jquery.min.js"></script>
+<script src="/static/js/1.12.0jquery-ui.min.js"></script>
+
+</head>
+<body>
+<input type="text" id='email' />
+<div id='response'>
+</div>
+	<form id='techProfile'>
+		<input type='text' id='name' placeholder="Name" /><br>
+		<input id='college' type='text' placeholder="College" /><br>
+		<select id='year'>
+			<option value = 1>1</option>
+			<option value = 2>2</option>
+			<option value = 3>3</option>
+			<option value = 4>4</option>
+		</select>
+		<br>
+		<input id='mobileNumber' type='text' placeholder="mobile" /><br>
+		<input id='city' type='text' placeholder="city" /><br>
+		Gender:
+		<select id='gender'>
+			<option value=0>Female</option>
+			<option value=1>Male</option>
+		</select>
+		<input type='button' id='registration' value='Register Info' />
+		<br>
+	</form>
+<form id='offLine'>
+Gender:
+	<select id='gender'>
+			<option value=0>Female</option>
+			<option value=1>Male</option>
+		</select>
+		<input type="button" value='Register' />
+</form>
+<script type="text/javascript">
+
+function theAjax(uri,data){
+ return $.ajax({
+    type:"POST",
+    dataType:"json",
+    url: uri,
+    data : data
+ });
+};
+
+
+	$(function(){
+   var availableTags = [
+        {% for email in emails %}
+            "{{email.0}}",
+        {%endfor%}
+      ];
+
+ $("#email").autocomplete({
+        source: availableTags
+      });
+    });
+    // over write the default autocomplete function to match the option starting with term
+    $.ui.autocomplete.filter = function (array, term) {
+      var matcher = new RegExp("^" + $.ui.autocomplete.escapeRegex(term), "i");
+      return $.grep(array, function (value) {
+        return matcher.test(value.label || value.value || value);
+      });
+    };
+
+$(document).ready(function() {
+	$("#techProfile").hide();
+	$("#offLine").hide();
+	$("#email").on('keyup click blur',function(event)
+	{
+		data = {"email":$(this).val()}
+		theAjax("/details/",data)
+		.done(function(response){
+			console.log(response)
+			if(response['status'] == 0)
+			{
+				$("#response").html("Register The TechProfile");
+				$("#techProfile").show();
+				$("#offLine").hide();
+			}
+
+			else if(response['status'] == 2)
+			{
+				$("#response").html("Already REgistered!!");
+				$("#techProfile").hide();
+				$("#offLine").hide();
+			}
+			else
+			{
+				$("#response").html("Select Gender, TechProfile REgistered!!")
+				$("#offLine").show();
+				$("#techProfile").hide();
+			}
+		});
+	});
+	$("#registration").click(function(event) {
+		data = {
+			
+	"name":$("#name").val(),
+	"college":$("#college").val(),
+	"mobileNumber":$("#mobileNumber").val(),
+	"email":$("#email").val(),
+	"gender":$("#gender").val(),
+	"year":$("#year").val()
+
+		}
+		theAjax("/register/",data)
+		.done(function(response){
+			if(response['status'] == 1)
+			{
+
+				$("#email").val("");
+				$("#techProfile").hide();
+			}
+			else if(response['status'] == 0){
+				$("#response").html("Please Assign Current Hostel!!!");
+			}
+			else
+			{
+				$("#response").html("Already REgistered");
+			}
+		})
+		.fail(function(){
+			$("#response").html("Please Assign Current Hostel!!!");
+		})
+	});
+});
+
+
+</script>
+</body>
+</html>

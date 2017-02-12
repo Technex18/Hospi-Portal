@@ -1,0 +1,22 @@
+<form method='post'>
+{% csrf_token %}
+<input type='text' name='username' placeholder="Username" /><br>
+<input type='password' name='password' placeholder="placeholder" /><br>
+<input type='submit' value='Login' />
+</form>
+{% if errors %}
+{{errors}}
+{% endif %}
+
+{% if transactions %}
+<table>
+<legend>{{request.user.username}}</legend>
+<tr><td>Email</td><td>Name</td><td>Amount</td><td>Facility</td></tr>
+
+{% for transaction in transactions %}
+<tr>
+<td>{{transaction.creditor.email}}</td><td>  {{transaction.creditor.user.first_name}}</td>
+<td> {{transaction.amount}}</td>{{transaction.facility.name}}({{transaction.facility.maxPrice}})
+{% endfor %}
+</table>
+{% endif %}

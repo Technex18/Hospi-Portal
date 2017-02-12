@@ -1,3 +1,129 @@
-from django.shortcuts import render
-
+from django.shortcuts import render, HttpResponse, redirect,HttpResponseRedirect
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.contrib import messages
+import requests
+from django.views.decorators.csrf import csrf_exempt
+import json
+import os
+import facebook
+from reg.models import *
+from payment.models import *
+from django_mobile import get_flavour
+from user_agents import parse
+from django.db.models import Q
+from django.contrib.auth.decorators import user_passes_test
+from django.contrib.staticfiles.templatetags.staticfiles import static
+import dropbox
+from django.db.models import Sum,Max
+import urllib2
+import cookielib
+from ast import literal_eval
+from xlrd import open_workbook
+from xlwt import Workbook
+import random
+from django.utils.crypto import get_random_string
+import cStringIO
+from PIL import Image
+import urllib
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+import base64
+from io import BytesIO
+from django.core import serializers
 # Create your views here.
+
+
+def loginK(request):
+	if request.method == 'POST':
+		post = request.POST
+		user = authenticate(username = post['username'],password = post['password'])
+		if user is not None:
+			login(request,user)
+			#sessionBeginn(request)
+			return redirect('/payment')
+		else:
+			return render(request,"login.html",{'errors':'Invalid credentials'})
+	else:
+		return render(request,'login.html')
+
+
+@login_required(login_url = '/login')
+def payment(request):
+	facilities = Facility.objects.all()
+	if request.method == 'POST':
+		post = request.POST
+		facility = Facility.objects.get(name = post['facilityName'])
+		try:
+			techprofile = TechProfile.objects.get(email = post['identifier'])
+		except:
+			try:
+				techprofile = TechProfile.objects.get(technexId = post['identifier'])
+			except:
+				return render(request,'payment.html',{'error':'Invalid Email or TechnexId','facilities':facilities})
+
+		if post['amount'] > 0:
+			transaction = Transaction(creditor = techprofile,amount = post['amount'], facility = facility, reciever = request.user.deskteam)
+			transaction.save()
+			#transactionsSessions = request.session['transactions']
+			#transactionsSessions.append(transaction.id)
+			#request.session['transactions'] = transactionsSessions
+			recheckTransaction = Transaction.objects.get(id = transaction.id)
+			return render(request,'payment.html',{'transaction':recheckTransaction,'facilities':facilities})
+		else:
+			return render(request,'payment.html',{'error':'Invalid Transaction','facilities':facilities})
+	else:
+		return render(request,'payment.html',{'facilities':facilities})
+
+
+def paymentEnquiry(request):
+	if request.method == 'POST':
+		post = request.POST
+		try:
+			techprofile = TechProfile.objects.get(email = post['identifier'])
+		except:
+			try:
+				techprofile = TechProfile.objects.get(technexId = post['identifier'])
+			except:
+				return render(request,'enquiry.html',{'errors':'Invalid Email or TechnexId'})
+		transactions = Transaction.objects.filter(creditor = techprofile)
+		return render(request,'enquiry.html',{'transactions':transactions})	
+	else:
+		return render(request,'enquiry.html')
+
+@login_required(login_url='/login')
+def sessionBeginn(request):
+	request.session['transactions'] = []
+
+
+@login_required(login_url='/login')
+def logoutK(request):
+	logout(request)
+	#transactions = Transaction.objects.filter(id__in = request.session['transactions'])
+	#request.session['transactions'] = []
+	return render(request,'login.html')#,{'transactions':transactions})
+
+def deskTeamEnquiry(request):
+	#if request.user.deskteam.authorityLevel == 0:
+	#	return redirect('/payment')
+	deskteam = DeskTeam.objects.all()
+	transactionsData = []
+	for deskteama in deskteam:
+		transactions  = Transaction.objects.filter(reciever = deskteama).order_by('timeStamp')
+		transactionArray = []
+		for transaction in transactions:
+			transactionObject = {}
+			transactionObject['amount'] = transaction.amount
+			transactionObject['facility'] = transaction.facility.name
+			transactionObject['facilityPrice'] = transaction.facility.maxPrice
+			transactionObject['creditor'] = transaction.creditor.email
+			transactionObject['timeStamp'] = transaction.timeStamp
+			transactionArray.append(transactionObject)
+		transactionObject['reciever'] = deskteama.user.username
+		transactionObject['data'] = transactionArray
+		transactionsData.append(transactionObject)
+	print transactionsData
+	return render(request,'deskEnquiry.html',{"transactionData":transactionsData})
