@@ -37,6 +37,7 @@ class Hostel(models.Model):
 	genderType = models.SmallIntegerField(default = 1) #1 means Male,0 Means Female
 	bufferSize = models.IntegerField(default = 0)
 	order = models.IntegerField(default = 0)
+	code = models.CharField(max_length = 1,null = True, blank = True)
 	def __unicode__(self):
 		return '%s %s'%(self.name,self.capacity)
 

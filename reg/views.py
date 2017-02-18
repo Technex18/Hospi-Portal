@@ -172,3 +172,6 @@ def hostelPortal(request):
 		currentHostel.save()
 
 	return render(request,'hostel.html',{'error':"",'currentHostels':currentHostels,"hostels":totalHostels})
+'''
+def generateCode(techprofile):
+	'''
