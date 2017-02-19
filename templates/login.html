@@ -1,7 +1,8 @@
+{% load staticfiles %}
 <form method='post'>
 {% csrf_token %}
 <input type='text' name='username' placeholder="Username" /><br>
-<input type='password' name='password' placeholder="placeholder" /><br>
+<input type='password' name='password' placeholder="password" /><br>
 <input type='submit' value='Login' />
 </form>
 {% if errors %}
@@ -20,3 +21,10 @@
 {% endfor %}
 </table>
 {% endif %}
+<script src="{% static "jquery.min.js"%}"></script>
+<script type="text/javascript">
+	$(document).ready(function($) {
+		$("input[name='username']").focus();	
+	});
+	
+</script>

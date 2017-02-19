@@ -19,26 +19,47 @@
 			<option value = 2>2</option>
 			<option value = 3>3</option>
 			<option value = 4>4</option>
+			<option value = 5>5</option>
 		</select>
 		<br>
 		<input id='mobileNumber' type='text' placeholder="mobile" /><br>
 		<input id='city' type='text' placeholder="city" /><br>
 		Gender:
 		<select id='gender'>
-			<option value=0>Female</option>
 			<option value=1>Male</option>
-		</select>
+			<option value=0>Female</option>
+			
+		</select><br>
+		<input type='checkbox' name='security' value=1 checked="true" />Security Fee Paid<br>
+		<input type='checkbox' name='accom' value=1 />Accommodation <br>
+		<select name='hostel' disabled="true">
+{% for hostel in hostels %}
+<option value="{{hostel.name}}">{{hostel.name}}(capacity = {{hostel.currentCapacity}} + {{hostel.bufferSize}})({{hostel.capacity}})
+{% endfor %}
+</select>
 		<input type='button' id='registration' value='Register Info' />
 		<br>
 	</form>
+
+
+
+	<div id='paymentHistory'>
+
+	</div>
+<!--
 <form id='offLine'>
 Gender:
 	<select id='gender'>
-			<option value=0>Female</option>
+			
 			<option value=1>Male</option>
+			<option value=0>Female</option>
+
 		</select>
+		<input type='checkbox' name='security' value=1 checked="true" />Security Fee Paid<br>
+		<input type='checkbox' name='accom' value=1 />Accommodation <br>
 		<input type="button" value='Register' />
 </form>
+-->
 <script type="text/javascript">
 
 function theAjax(uri,data){
@@ -70,9 +91,21 @@ function theAjax(uri,data){
       });
     };
 
+function resetForm()
+{
+	$("#name").val("").attr("disabled",false);
+	
+	$("#college").val("").attr("disabled",false);
+	$("#city").val("").attr('disabled', false);
+	$("#mobileNumber").val("").attr('disabled', false);
+	$("#year").val(1).attr('disabled', false);
+	$("input[name=security]").attr('checked', true);
+	$("input[name=accom]").attr('checked', false);
+	$("select[name=hostel]").attr('disabled', true);
+}
 $(document).ready(function() {
 	$("#techProfile").hide();
-	$("#offLine").hide();
+	//$("#offLine").hide();
 	$("#email").on('keyup click blur',function(event)
 	{
 		data = {"email":$(this).val()}
@@ -83,23 +116,47 @@ $(document).ready(function() {
 			{
 				$("#response").html("Register The TechProfile");
 				$("#techProfile").show();
-				$("#offLine").hide();
+				resetForm();
+				//$("#offLine").hide();
 			}
 
 			else if(response['status'] == 2)
 			{
 				$("#response").html("Already REgistered!!");
+				html = ""
+				response['paymentData'].forEach( function(element, index) {
+					html +=  "Amount:  "+element['fields']['amount']+"      ";
+					html += "Time:  "+element['fields']['timeStamp']+"       ";
+					html += "Facility: "+element['fields']['facility']+"<br>";
+				});
+				$("#paymentHistory").html(html);
 				$("#techProfile").hide();
-				$("#offLine").hide();
+				//$("#offLine").hide();
 			}
 			else
 			{
 				$("#response").html("Select Gender, TechProfile REgistered!!")
-				$("#offLine").show();
-				$("#techProfile").hide();
+				//$("#offLine").show();
+				$("#techProfile").show();
+				$("#name").val(response['data']['name']).attr('disabled', true);
+				$("#college").val(response['data']['college']).attr('disabled', true);
+				$("#mobileNumber").val(response['data']['mobileNumber']).attr('disabled', true);
+				$("#year").val(response['data']['year']).attr('disabled', true);
+				$("#city").val(response['data']['city']).attr('disabled', true);
+				
 			}
 		});
 	});
+
+
+	$("input[name=accom]").change(function(event) {
+		if($(this).prop("checked"))
+			$("select[name=hostel]").attr('disabled', false);
+		else
+			$("select[name=hostel]").attr('disabled', true);
+	});
+
+
 	$("#registration").click(function(event) {
 		data = {
 			
@@ -108,8 +165,25 @@ $(document).ready(function() {
 	"mobileNumber":$("#mobileNumber").val(),
 	"email":$("#email").val(),
 	"gender":$("#gender").val(),
-	"year":$("#year").val()
+	"year":$("#year").val(),
+	"hostel":$("select[name=hostel]").val()
 
+		}
+		if($("input[name=security").prop("checked"))
+		{
+			data['security'] = 1;
+		}
+		else
+		{
+			data['security'] = 0;
+		}
+		if($("input[name=accom]").prop("checked"))
+		{
+			data['accom'] = 1;
+		}
+		else
+		{
+			data['accom'] = 0;
 		}
 		theAjax("/register/",data)
 		.done(function(response){
@@ -117,10 +191,18 @@ $(document).ready(function() {
 			{
 
 				$("#email").val("");
+				html = ""
+				response['paymentData'].forEach( function(element, index) {
+					html +=  "Amount:  "+element['fields']['amount']+"      ";
+					html += "Time:  "+element['fields']['timeStamp']+"       ";
+
+				});
+				$("#paymentHistory").html(html);
+				resetForm();
 				$("#techProfile").hide();
 			}
 			else if(response['status'] == 0){
-				$("#response").html("Please Assign Current Hostel!!!");
+				$("#response").html("The Selected hostel is full !!!");
 			}
 			else
 			{

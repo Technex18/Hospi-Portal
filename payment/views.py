@@ -63,7 +63,7 @@ def payment(request):
 			try:
 				techprofile = TechProfile.objects.get(technexId = post['identifier'])
 			except:
-				return render(request,'payment.html',{'error':'Invalid Email or TechnexId','facilities':facilities})
+				return render(request,'payment.html',{'errors':'Invalid Email or TechnexId','facilities':facilities})
 
 		if post['amount'] > 0:
 			transaction = Transaction(creditor = techprofile,amount = post['amount'], facility = facility, reciever = request.user.deskteam)
@@ -78,6 +78,7 @@ def payment(request):
 	else:
 		return render(request,'payment.html',{'facilities':facilities})
 
+# def 
 
 def paymentEnquiry(request):
 	if request.method == 'POST':

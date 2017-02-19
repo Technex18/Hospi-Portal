@@ -71,7 +71,7 @@ def register(request):
         techprofile.college = college
         techprofile.mobileNumber = data.get('mobileNumber')
         techprofile.year = data.get('year')
-        techprofile.apploginStatus = True
+        #techprofile.apploginStatus = True
 		#print "codeBaes 2"
         pins = TechProfile.objects.all().values_list("pin")
         while True:
@@ -87,7 +87,14 @@ def register(request):
 
 def intro(request):
 	emails = TechProfile.objects.all().values_list('email')
-	return render(request,'mainPage.html',{'emails': emails})
+	totalHostels_ = Hostel.objects.all()
+	datas = json.loads(serializers.serialize('json',totalHostels_,fields = ('name','capacity','bufferSize')))
+	totalHostels = []
+	for data in datas:
+		count = Hostel.objects.get(name = data['fields']['name']).offlineprofile_set.all().count()
+		data['fields']['currentCapacity'] = data['fields']['capacity'] - count - data['fields']['bufferSize']
+		totalHostels.append(data['fields'])
+	return render(request,'mainPage.html',{'emails': emails,"hostels":totalHostels})
 
 @csrf_exempt
 def offLineRegister(request):
@@ -103,11 +110,26 @@ def offLineRegister(request):
 		except:
 			techprofile = register(request)
 		offLineProfile = OffLineProfile(techProfile = techprofile,gender = int(post['gender']))
-		hostel = assignHostel(int(post['gender']))
-		if not hostel:
-			response['status'] = 0
-			return JsonResponse(response)
-		offLineProfile.hostel = hostel
+		
+		if int(post['security']) == 1:
+			response['security'] = 'Reached'
+			security  = Facility.objects.get(name = 'Security')
+			securityTransaction = Transaction(creditor = techprofile, amount = 200, facility  = security, reciever = request.user.deskteam)
+			securityTransaction.save()
+		if int(post['accom']) == 1:
+			response['accom'] = "Reached"
+			hostel = Hostel.objects.get(name = post['hostel'])
+			count = hostel.offlineprofile_set.all().count()
+			if hostel.capacity <= count:
+				response['status'] = 0
+				return JsonResponse(response)
+			accomFacility = Facility.objects.get(name = 'Accommodation')
+			accomtransaction = Transaction(creditor = techprofile, amount = 500, facility = accomFacility, reciever = request.user.deskteam)
+			accomtransaction.save()
+			offLineProfile.hostel = hostel
+		transactions = Transaction.objects.filter(creditor = techprofile)
+		transactionsData = json.loads(serializers.serialize('json',transactions, fields=('amount','timeStamp')))
+		response['paymentData'] = transactionsData
 		offLineProfile.save()
 		response['status'] = 1
 		return JsonResponse(response)
@@ -118,13 +140,20 @@ def details(request):
 	post = request.POST
 	try:
 		offLineProfile = OffLineProfile.objects.get(techProfile__email = post['email'])
-		response['status'] = 2 # Already registered 
+		response['status'] = 2 # Already registered
+		techprofile = offLineProfile.techProfile
+		transactions = Transaction.objects.filter(creditor = techprofile)
+		transactionsData = json.loads(serializers.serialize('json',transactions, fields=('amount','timeStamp','facility')))
+		for transactionData in transactionsData:
+			transactionData['fields']['facility'] = Facility.objects.get(id=transactionData['fields']['facility']).name
+		response['paymentData'] = transactionsData 
 		return JsonResponse(response)
 	except:
 		try:
 			techProfile = TechProfile.objects.filter(email = post['email'])
-			data = json.loads(serializers.serialize('json', techProfile, fields=('email','technexId','city','year')))		
+			data = json.loads(serializers.serialize('json', techProfile, fields=('technexId','city','year','mobileNumber')))		
 			data[0]['fields']['name'] = techProfile[0].user.first_name
+			data[0]['fields']['college'] = techProfile[0].college.collegeName
 			response['status'] = 1 #For Registered techprofile but not registered offlineProfile
 			response['data'] = data[0]['fields']
 			return JsonResponse(response)
@@ -138,7 +167,7 @@ def assignHostel(gender):
 	print gender
 	currentHostel = CurrentHostel.objects.get(hostel__genderType = int(gender))
 	count = currentHostel.hostel.offlineprofile_set.all().count()
-	if currentHostel.hostel.capacity - count > currentHostel.bufferSize:
+	if currentHostel.hostel.capacity - count > currentHostel.hostel.bufferSize:
 		return currentHostel.hostel
 	else:
 		for hostel in hostels:
@@ -172,6 +201,6 @@ def hostelPortal(request):
 		currentHostel.save()
 
 	return render(request,'hostel.html',{'error':"",'currentHostels':currentHostels,"hostels":totalHostels})
-'''
+
 def generateCode(techprofile):
-	'''
+	position = random.randint(0,3)
