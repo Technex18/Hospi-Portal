@@ -116,6 +116,7 @@ $(document).ready(function() {
 			{
 				$("#response").html("Register The TechProfile");
 				$("#techProfile").show();
+				$("#paymentHistory").html(" ");
 				resetForm();
 				//$("#offLine").hide();
 			}
@@ -135,6 +136,7 @@ $(document).ready(function() {
 			}
 			else
 			{
+				$("#paymentHistory").html(" ");
 				$("#response").html("Select Gender, TechProfile REgistered!!")
 				//$("#offLine").show();
 				$("#techProfile").show();
@@ -195,7 +197,7 @@ $(document).ready(function() {
 				response['paymentData'].forEach( function(element, index) {
 					html +=  "Amount:  "+element['fields']['amount']+"      ";
 					html += "Time:  "+element['fields']['timeStamp']+"       ";
-
+					html += "Facility: "+element['fields']['facility']+"<br>";
 				});
 				$("#paymentHistory").html(html);
 				resetForm();
