@@ -44,7 +44,7 @@ def loginK(request):
 		if user is not None:
 			login(request,user)
 			#sessionBeginn(request)
-			return redirect('/payment')
+			return redirect('/main/')
 		else:
 			return render(request,"login.html",{'errors':'Invalid credentials'})
 	else:

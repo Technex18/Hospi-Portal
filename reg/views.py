@@ -219,6 +219,35 @@ def hostelPortal(request):
 
 def generateCode(techprofile):
 	position = random.randint(0,3)
+	response = {}
+	x = techprofile.pin
+	y = ['X','X','X','X','X']
+	y[4] = str(position)
+	try:
+		print position
+		print techprofile
+		offtech = OffLineProfile.objects.get(techProfile = techprofile)
+		
+		hostel = offtech.hostel.code
+		y[position] = hostel
+		l = 0	
+		for ch in range(0,2):
+			if l is position:
+				l = l+1
+			y[l] = x[ch]
+		print y
+		z = "".join(y)
+		print z
+		response['status'] = 1
+		response['pin'] = z
+		return response
+	except:
+		response['status'] = 0
+		return response			
+
+
+
+
 
 @csrf_exempt
 def hostelAllot(request):
