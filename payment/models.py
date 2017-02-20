@@ -61,3 +61,4 @@ class IdCard(models.Model):
 class CurrentHostel(models.Model):
 	hostel = models.OneToOneField(Hostel)
 	bufferSize = models.IntegerField(default = 0)
+

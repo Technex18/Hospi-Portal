@@ -18,10 +18,10 @@
 {% endif %}
 <br><br>
 {% if transaction %}
-{{transaction.creditor.email}}  {{transaction.creditor.user.first_name}}<br>
-Amount Paid: {{transaction.amount}} for {{transaction.facility.name}} out of {{transaction.facility.maxPrice}}
+{{transaction.creditor}}  <br>
+Amount Paid: {{transaction.amount}} for {{transaction.facility}}
 <br><br>
-Recieved by {{transaction.reciever.user.username}}
+Recieved by {{transaction.reciever}}
 {% endif %}
 <script src="{% static "jquery.min.js"%}"></script>
 <script type="text/javascript">

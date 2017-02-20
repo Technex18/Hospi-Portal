@@ -52,6 +52,7 @@ def loginK(request):
 
 
 @login_required(login_url = '/login')
+@csrf_exempt
 def payment(request):
 	facilities = Facility.objects.all()
 	if request.method == 'POST':
@@ -71,8 +72,14 @@ def payment(request):
 			#transactionsSessions = request.session['transactions']
 			#transactionsSessions.append(transaction.id)
 			#request.session['transactions'] = transactionsSessions
-			recheckTransaction = Transaction.objects.get(id = transaction.id)
-			return render(request,'payment.html',{'transaction':recheckTransaction,'facilities':facilities})
+			recheckTransaction = Transaction.objects.filter(id = transaction.id)
+			datas = json.loads(serializers.serialize('json',recheckTransaction,fields = ('amount','timeStamp')))
+			datas[0]['fields']['creditor'] = recheckTransaction[0].creditor.user.first_name
+			datas[0]['fields']['facility'] = recheckTransaction[0].facility.name
+			datas[0]['fields']['reciever'] = recheckTransaction[0].reciever.user.first_name
+			response = {}
+			response['transaction'] = datas[0]['fields']
+			return JsonResponse(response) #render(request,'payment.html',{'transaction':recheckTransaction,'facilities':facilities})
 		else:
 			return render(request,'payment.html',{'error':'Invalid Transaction','facilities':facilities})
 	else:
@@ -135,3 +142,6 @@ def deskTeamEnquiry(request):
 			print transactionB['creditor']	
 	print transactionsData
 	return render(request,'deskEnquiry.html',{"transactionData":transactionsData})
+
+def hospi(request):
+	return render(request,'deskf.html')	

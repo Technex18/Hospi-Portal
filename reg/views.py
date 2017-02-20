@@ -88,13 +88,14 @@ def register(request):
 def intro(request):
 	emails = TechProfile.objects.all().values_list('email')
 	totalHostels_ = Hostel.objects.all()
+	facilities = Facility.objects.all()
 	datas = json.loads(serializers.serialize('json',totalHostels_,fields = ('name','capacity','bufferSize')))
 	totalHostels = []
 	for data in datas:
 		count = Hostel.objects.get(name = data['fields']['name']).offlineprofile_set.all().count()
 		data['fields']['currentCapacity'] = data['fields']['capacity'] - count - data['fields']['bufferSize']
 		totalHostels.append(data['fields'])
-	return render(request,'mainPage.html',{'emails': emails,"hostels":totalHostels})
+	return render(request,'mainPage.html',{'emails': emails,"hostels":totalHostels,'facilities':facilities})
 
 @csrf_exempt
 def offLineRegister(request):
@@ -128,7 +129,9 @@ def offLineRegister(request):
 			accomtransaction.save()
 			offLineProfile.hostel = hostel
 		transactions = Transaction.objects.filter(creditor = techprofile)
-		transactionsData = json.loads(serializers.serialize('json',transactions, fields=('amount','timeStamp')))
+		transactionsData = json.loads(serializers.serialize('json',transactions, fields=('amount','timeStamp','facility')))
+		for transactionData in transactionsData:
+			transactionData['fields']['facility'] = Facility.objects.get(id=transactionData['fields']['facility']).name
 		response['paymentData'] = transactionsData
 		offLineProfile.save()
 		response['status'] = 1
@@ -142,11 +145,23 @@ def details(request):
 		offLineProfile = OffLineProfile.objects.get(techProfile__email = post['email'])
 		response['status'] = 2 # Already registered
 		techprofile = offLineProfile.techProfile
+		total = 0
 		transactions = Transaction.objects.filter(creditor = techprofile)
 		transactionsData = json.loads(serializers.serialize('json',transactions, fields=('amount','timeStamp','facility')))
 		for transactionData in transactionsData:
 			transactionData['fields']['facility'] = Facility.objects.get(id=transactionData['fields']['facility']).name
-		response['paymentData'] = transactionsData 
+			total += transactionData['fields']['amount']
+		techProfile = [techprofile]
+		data = json.loads(serializers.serialize('json', techProfile, fields=('technexId','city','year','mobileNumber')))		
+		data[0]['fields']['name'] = techProfile[0].user.first_name
+		data[0]['fields']['college'] = techProfile[0].college.collegeName
+		try:
+			response['hostel'] = offLineProfile.hostel.name
+		except:
+			response['hostel'] = 'Not Alloted'
+		response['data'] = data[0]['fields']
+		response['paymentData'] = transactionsData
+		response['total'] = total 
 		return JsonResponse(response)
 	except:
 		try:
@@ -204,3 +219,26 @@ def hostelPortal(request):
 
 def generateCode(techprofile):
 	position = random.randint(0,3)
+
+@csrf_exempt
+def hostelAllot(request):
+	response = {}
+	post = request.POST
+	hostel = Hostel.objects.get(name = post['hostelName'])
+	profile = OffLineProfile.objects.get(techProfile__email = post['email'])
+	facility = Facility.objects.get(name = 'Accommodation')
+	
+	count = hostel.offlineprofile_set.all().count()
+	if hostel.capacity <= count:
+		response['status'] = 0
+		return JsonResponse(response)
+	else:
+		transactions = Transaction.objects.filter(creditor = profile.techProfile)
+		if transactions.count() == 0:
+			response['status'] = 2
+			return JsonResponse(response)	
+		profile.hostel = hostel
+		response['hostelName'] = hostel.name
+		response['status'] = 1
+	profile.save()
+	return JsonResponse(response)

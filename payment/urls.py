@@ -13,4 +13,6 @@ urlpatterns = [
 	url(r'payment/$',payment,name='mainPage'),
 	url(r'paymentEnquiry/$',paymentEnquiry,name='paymentEnquiry'),
 	url(r'deskTeamEnquiry/$',deskTeamEnquiry,name='deskTeamEnquiry'),
+	url(r'hospi/$', hospi, name="hospi"),
+
 	]

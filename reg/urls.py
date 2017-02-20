@@ -12,4 +12,5 @@ urlpatterns = [
 	url(r'main/$',intro,name='mainPage'),
 	url(r'^details/$',details,name='details'),
 	url(r'^hostel/$',hostelPortal,name='hostel'),
+	url(r'^hostelChange/$',hostelAllot, name='Hostel Change'),
 ]
